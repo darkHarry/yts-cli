@@ -31,6 +31,11 @@ def get_torrent(movie_name, torrent_link):
     if res.status_code == requests.codes.ok:
         open(movie_name+".torrent", "wb").write(res.content)
 
-movie_page = get_movie_page(get_movie_name())
-get_torrent(get_movie_name(), get_formats(movie_page)["720p.WEB"])
+if __name__ == "__main__":
+    movie_page = get_movie_page(get_movie_name())
+    formats = get_formats(movie_page)
+    print("Available In:")
+    for key in formats.keys():
+        print("\t", key)
+    #get_torrent(get_movie_name(), get_formats(movie_page)["720p.WEB"])
 
