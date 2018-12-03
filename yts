@@ -4,6 +4,7 @@ import requests
 import bs4
 import sys
 import os
+import subprocess
 
 def print_usage():
     print("Usage: ./main.py <movie-name> <year>")
@@ -55,10 +56,18 @@ def print_formats(formats):
 def get_torrent(movie_name, torrent_link):
     res = requests.get(torrent_link)
     if res.status_code == requests.codes.ok:
-        if os.path.isfile(movie_name+".torrent"):
+        torrent_name = movie_name+".torrent"
+        if os.path.isfile(torrent_name):
             print("Torrent file exists")
         else:
-            open(movie_name+".torrent", "wb").write(res.content)
+            open(torrent_name, "wb").write(res.content)
+        
+        return torrent_name 
+
+def execute_transmission(torrent_name):
+    command = "transmission-gtk {}".format(torrent_name)
+    command_list = command.split()
+    subprocess.Popen(command_list)
 
 if __name__ == "__main__":
     movie_name, movie_format = get_movie_details() 
@@ -68,15 +77,22 @@ if __name__ == "__main__":
     movie_page = get_movie_page(movie_name)
     if not movie_page:
         print("Movie Page does not exist!")    
+        exit()
 
     formats = extract_formats(movie_page)
     if not formats:
         print("Cannot get movie formats")
+        exit()
     
     if movie_format:
         if check_format_availability(movie_format, formats):
             torrent_link = formats[movie_format]
-            get_torrent(movie_name, torrent_link)
+            torrent_name = get_torrent(movie_name, torrent_link)
+            if not torrent_name:
+                print("Cannot download torrent")
+            else:
+                execute_transmission(torrent_name)
+
         else:
             print("{} format not available for {}".format(movie_format, movie_name))
     else: 
