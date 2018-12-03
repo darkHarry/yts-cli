@@ -7,9 +7,9 @@ import os
 import subprocess
 
 def print_usage():
-    print("Usage: ./main.py <movie-name> <year>")
-    print("Example: \"./main.py the-nun 2018\"")
-    print("Example: \"./main.py the-nun 2018 1080p.WEB\"")
+    print("Usage:   \"./yts <movie-name> <year> [<format>]\"\n")
+    print("Example: \"./yts the-nun 2018\"              # shows the available formats")
+    print("Example: \"./yts the-nun 2018 1080p.WEB\"    # downloads movie in the given format")
     exit()
 
 def get_movie_details():

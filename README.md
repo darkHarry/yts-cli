@@ -7,5 +7,5 @@ Usage : `./yts <movie-name> <year> [<format>]`
 
 Example :
 ```sh
-$ ./yts the-nun 2018              # show the available formats
-$ ./yts the-nun 2018 1080p.WEB    # download movie in the given format
+$ ./yts the-nun 2018              # shows the available formats
+$ ./yts the-nun 2018 1080p.WEB    # downloads movie in the given format
