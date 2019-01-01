@@ -11,7 +11,7 @@ def print_usage():
     print("Usage:   \"./yts [-s, --search <QUERY>] <movie-name> <year> [<format>]\"\n")
     print("Example: \"./yts the-nun 2018\"              # shows the available formats")
     print("Example: \"./yts the-nun 2018 1080p.WEB\"    # downloads movie in the given format")
-    print("Example: \"./yts -s nun\"                    # shows results of search query")
+    print("Example: \"./yts --search nun\"              # shows results of search query")
     exit()
 
 def handle_args():
