@@ -30,10 +30,10 @@ def handle_args():
     return arg_dict
 
 def get_movie_name():
-        return sys.argv[1].lower()+"-"+sys.argv[2]
+    return "-".join(sys.argv[1].split()).lower()+"-"+sys.argv[2]
 
 def get_movie_format():
-        return sys.argv[3]
+    return sys.argv[3]
 
 def check_format_availability(format, formats):
     return format in formats
