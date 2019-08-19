@@ -39,7 +39,7 @@ def check_format_availability(format, formats):
     return format in formats
 
 def get_movie_page(movie):
-    link = "https://yts.am/movie/"+movie
+    link = "https://yts.lt/movie/"+movie
     res = requests.get(link)
     if res.status_code == requests.codes.ok:
         return res
@@ -51,7 +51,7 @@ def extract_movie_data(movie_data):
 
 
 def search_movies(query):
-    link = "https://yts.am/browse-movies/{}/all/all/0/latest".format(query)
+    link = "https://yts.lt/browse-movies/{}/all/all/0/latest".format(query)
     res = requests.get(link)
     if res.status_code == requests.codes.ok:
         query_dict = {}
