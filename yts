@@ -54,6 +54,18 @@ def get_movie_page(movie):
     if res.status_code == requests.codes.ok:
         return res
 
+def get_pop_downs():
+    link = "https://yts.lt"
+    res = requests.get(link)
+    if res.status_code == requests.codes.ok:
+        query_dict = {}
+        pop_movies = bs4.BeautifulSoup(res.text, "lxml").select("#popular-downloads")[0].select("div[class='browse-movie-wrap col-xs-10 col-sm-5']")
+        for movie in pop_movies:
+            movie_data = movie.select("a > figure")[0]
+            query_dict.update(extract_movie_data(movie_data))
+        return query_dict
+
+
 def extract_movie_data(movie_data):
     movie_title = movie_data.select("img")[0]["alt"].replace("download", "")
     rating = movie_data.select("figcaption > h4[class='rating']")[0].getText()
@@ -102,6 +114,13 @@ def execute_transmission(torrent_name):
 
 if __name__ == "__main__":
     arg_dict = handle_args()
+    if arg_dict == None:
+        pop_movies = get_pop_downs()
+        if pop_movies:
+            print("Popular Downloads:")
+            for movie, rating in pop_movies.items():
+                print("\t{}{}".format(movie, rating))
+        exit(0)
     movie_name = arg_dict["name"]
     movie_format = arg_dict["format"]
     search_query_res = arg_dict["query"]
