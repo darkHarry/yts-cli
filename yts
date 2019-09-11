@@ -8,16 +8,26 @@ import os
 import subprocess
 
 def print_usage():
-    print("Usage:   \"./yts [-s, --search <QUERY>] <movie-name> <year> [<format>]\"\n")
+    print("Usage:   \"./yts [-s, --search <QUERY>] [-h --help] [<movie-name>] [<year>] [<format>]\"\n")
     print("Example: \"./yts the-nun 2018\"              # shows the available formats")
     print("Example: \"./yts the-nun 2018 1080p.WEB\"    # downloads movie in the given format")
     print("Example: \"./yts --search nun\"              # shows results of search query")
-    exit()
+    print("Example: \"./yts --help\"                    # shows this help")
+    print("Example: \"./yts                            # shows 4 popular downloads currently")
 
 def handle_args():
     arg_dict = {"name": None, "format": None, "query": None}
-    if len(sys.argv) == 3:
-        if (sys.argv[1] == "-s" or sys.argv[1] == "--search"):
+    if len(sys.argv) == 1:
+        return None
+    elif len(sys.argv) == 2:
+        if sys.argv[1] == "-h" or sys.argv[1] == "--help":
+            print_usage()
+            exit(0)
+        else:
+            print_usage()
+            exit(1)
+    elif len(sys.argv) == 3:
+        if sys.argv[1] == "-s" or sys.argv[1] == "--search":
             arg_dict["query"] = search_movies(sys.argv[2])
         else:
             arg_dict["name"] = get_movie_name()
@@ -26,7 +36,7 @@ def handle_args():
         arg_dict["format"] = get_movie_format()
     else:
         print_usage()
-    
+        exit(1)   
     return arg_dict
 
 def get_movie_name():
@@ -56,8 +66,8 @@ def search_movies(query):
     if res.status_code == requests.codes.ok:
         query_dict = {}
         movies_found = bs4.BeautifulSoup(res.text, "lxml").select("section > div[class='row']")[0].select("div[class='browse-movie-wrap col-xs-10 col-sm-4 col-md-5 col-lg-4']")
-        for movies in movies_found:
-            movie_data = movies.select("a > figure")[0]
+        for movie in movies_found:
+            movie_data = movie.select("a > figure")[0]
             query_dict.update(extract_movie_data(movie_data))
         return query_dict
 
@@ -102,17 +112,17 @@ if __name__ == "__main__":
     else:
         
         if not movie_name:
-            exit()
+            exit(1)
     
         movie_page = get_movie_page(movie_name)
         if not movie_page:
             print("Movie Page does not exist!")    
-            exit()
+            exit(1)
 
         formats = extract_formats(movie_page)
         if not formats:
             print("Cannot get movie formats")
-            exit()
+            exit(1)
     
         if movie_format:
             if check_format_availability(movie_format, formats):
