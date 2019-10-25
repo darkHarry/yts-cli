@@ -15,6 +15,14 @@ def print_usage():
     print("Example: \"./yts --help\"                    # shows this help")
     print("Example: \"./yts                            # shows 4 popular downloads currently")
 
+def make_request(link):
+    res = requests.get(link)
+    if res.status_code == requests.codes.ok:
+        return res
+    else:
+        print("ERROR: ", res.status_code)
+        exit(1)
+
 def handle_args():
     arg_dict = {"name": None, "format": None, "query": None}
     if len(sys.argv) == 1:
@@ -50,20 +58,18 @@ def check_format_availability(format, formats):
 
 def get_movie_page(movie):
     link = "https://yts.lt/movie/"+movie
-    res = requests.get(link)
-    if res.status_code == requests.codes.ok:
-        return res
+    res = make_request(link)
+    return res
 
 def get_pop_downs():
     link = "https://yts.lt"
-    res = requests.get(link)
-    if res.status_code == requests.codes.ok:
-        query_dict = {}
-        pop_movies = bs4.BeautifulSoup(res.text, "lxml").select("#popular-downloads")[0].select("div[class='browse-movie-wrap col-xs-10 col-sm-5']")
-        for movie in pop_movies:
-            movie_data = movie.select("a > figure")[0]
-            query_dict.update(extract_movie_data(movie_data))
-        return query_dict
+    res = make_request(link)
+    query_dict = {}
+    pop_movies = bs4.BeautifulSoup(res.text, "lxml").select("#popular-downloads")[0].select("div[class='browse-movie-wrap col-xs-10 col-sm-5']")
+    for movie in pop_movies:
+        movie_data = movie.select("a > figure")[0]
+        query_dict.update(extract_movie_data(movie_data))
+    return query_dict
 
 
 def extract_movie_data(movie_data):
@@ -74,14 +80,13 @@ def extract_movie_data(movie_data):
 
 def search_movies(query):
     link = "https://yts.lt/browse-movies/{}/all/all/0/latest".format(query)
-    res = requests.get(link)
-    if res.status_code == requests.codes.ok:
-        query_dict = {}
-        movies_found = bs4.BeautifulSoup(res.text, "lxml").select("section > div[class='row']")[0].select("div[class='browse-movie-wrap col-xs-10 col-sm-4 col-md-5 col-lg-4']")
-        for movie in movies_found:
-            movie_data = movie.select("a > figure")[0]
-            query_dict.update(extract_movie_data(movie_data))
-        return query_dict
+    res = make_request(link)
+    query_dict = {}
+    movies_found = bs4.BeautifulSoup(res.text, "lxml").select("section > div[class='row']")[0].select("div[class='browse-movie-wrap col-xs-10 col-sm-4 col-md-5 col-lg-4']")
+    for movie in movies_found:
+        movie_data = movie.select("a > figure")[0]
+        query_dict.update(extract_movie_data(movie_data))
+    return query_dict
 
 def extract_formats(movie_page):
     movie_formats = bs4.BeautifulSoup(movie_page.text, "lxml").select("p[class='hidden-xs hidden-sm']")[0].find_all("a")
@@ -97,15 +102,14 @@ def print_formats(formats):
  
 
 def get_torrent(movie_name, torrent_link):
-    res = requests.get(torrent_link)
-    if res.status_code == requests.codes.ok:
-        torrent_name = movie_name+".torrent"
-        if os.path.isfile(torrent_name):
-            print("Torrent file exists")
-        else:
-            open(torrent_name, "wb").write(res.content)
-        
-        return torrent_name 
+    res = make_request(torrent_link)
+    torrent_name = movie_name+".torrent"
+    if os.path.isfile(torrent_name):
+        print("Torrent file exists")
+    else:
+        open(torrent_name, "wb").write(res.content)
+    
+    return torrent_name 
 
 def execute_transmission(torrent_name):
     command = "transmission-gtk {}".format(torrent_name)
