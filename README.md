@@ -7,6 +7,7 @@ Usage : `./yts [-s, --search <QUERY>] <movie-name> <year> [<format>]`
 
 Example :
 ```sh
+$ ./yts                           # shows current popular downloads
 $ ./yts the-nun 2018              # shows the available formats
 $ ./yts the-nun 2018 1080p.WEB    # downloads movie in the given format
 $ ./yts --search nun              # shows results of search query
