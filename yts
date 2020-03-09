@@ -83,6 +83,20 @@ class YTS:
 
         return sum(arguments_dict_int)
 
+    # Make request to the given url
+    # Return the response object
+    # TODO give a user-friendly error
+    def make_request(self, url):
+        try:
+            res = requests.get(url)
+            res.raise_for_status()
+        except requests.exceptions.RequestException as err:
+            print(err)
+            sys.exit()
+
+        return res
+
+
 def main():
     yts = YTS("https://yts.mx")
     print(yts.get_cli_args())
