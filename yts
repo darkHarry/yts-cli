@@ -15,9 +15,10 @@ class YTS:
     # Initialize with the current yts url
     def __init__(self, yts_url) -> None:
         self.url = yts_url
+        self.arguments = self.get_cli_args()
 
     # Handles CLI arguments
-    # Returns a dictionary of the arguments with an error string
+    # Returns a dictionary of the arguments
     # Only one flag is to be applied at a time
     def get_cli_args(self) -> dict:
         parser = argparse.ArgumentParser(prog="yts",
@@ -54,23 +55,65 @@ class YTS:
         arguments_dict = vars(parser.parse_args())
         flags_applied = self.number_of_flags(arguments_dict)
         
-        # create an error string according to number of flags
+        # create an error and exit
         if flags_applied == 0:
-            error_string = "Check Usage using -h"
+            sys.exit("Error: Check Usage using -h")
         elif flags_applied > 1:
-            error_string = "Only One Flag is applicable"
-        else:
-            error_string = ""
-
-        # Add error string to arguments dictionary
-        arguments_dict["error"] = error_string
+            sys.exit("Error: Only one flag is applicable")
 
         return arguments_dict
+
+    # Gets the movie name from the arguments
+    # Returns a string
+    def get_movie_name_for_url(self):
+        flag_key = "f" if self.arguments["f"] else "d"
+        movie_name = self.arguments[flag_key][0].lower().split()
+        movie_year = self.arguments[flag_key][1]
+        return "-".join(movie_name) + "-" + movie_year
+
+    # Gets the movie format from the arguments
+    # Returns a string
+    def get_movie_format(self):
+        return self.arguments["d"]
+
+    # Get the movie page
+    # Returns a response object
+    def get_movie_page(self, movie_name):
+        url = self.url+"movie/"+movie_name
+        movie_page = self.make_request(url)
+        return movie_page
+
+    # Get the movie formats from the movie page
+    # Returns a dictionary of formats with their torrent urls
+    def extract_formats(self, movie_page) -> dict:
+        movie_formats = (
+            bs4.BeautifulSoup(movie_page.text, "lxml")
+            .select("p[class='hidden-xs hidden-sm']")[0]
+            .find_all("a")
+        )
+        torrent_urls = {}
+        for movie_format in movie_formats:
+            torrent_urls[movie_format.getText()] = movie_format["href"]
+        return torrent_urls
+
+    # Download and save movie torrent file to current folder
+    # Returns torrent name
+    def get_torrent(self, movie_name, torrent_url):
+        res = self.make_request(torrent_url)
+        torrent_name = movie_name+".torrent"
+        if not os.path.isfile(torrent_name):
+            with open(torrent_name, "wb") as torrent_file:
+                torrent_file.write(res.content)
+        else:
+            # Tell user file already exists
+            pass
+        return torrent_name
+
 
     ### UTIL FUNCTIONS ###
     
     # Make sure only one flag is used at a time
-    # Return an int of number of flags
+    # Returns an int of number of flags
     def number_of_flags(self, arguments_dict) -> int:
         # Convert arguments to 0 if not present or False
         # and to 1 if present or True
@@ -84,7 +127,7 @@ class YTS:
         return sum(arguments_dict_int)
 
     # Make request to the given url
-    # Return the response object
+    # Returns the response object
     # TODO give a user-friendly error
     def make_request(self, url):
         try:
@@ -96,9 +139,13 @@ class YTS:
 
         return res
 
+    # Check if format is present in given formats
+    def check_format_availability(format, formats):
+        return format in formats
+
 
 def main():
-    yts = YTS("https://yts.mx")
+    yts = YTS("https://yts.mx/")
     print(yts.get_cli_args())
 
 if __name__ == "__main__":
