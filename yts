@@ -2,161 +2,90 @@
 # yts
 
 import requests
+import argparse
 import bs4
 import sys
 import os
 import subprocess
 
-def print_usage():
-    print("Usage:   \"./yts [-s, --search <QUERY>] [-h --help] [<movie-name>] [<year>] [<format>]\"\n")
-    print("Example: \"./yts the-nun 2018\"              # shows the available formats")
-    print("Example: \"./yts the-nun 2018 1080p.WEB\"    # downloads movie in the given format")
-    print("Example: \"./yts --search nun\"              # shows results of search query")
-    print("Example: \"./yts --help\"                    # shows this help")
-    print("Example: \"./yts                            # shows 4 popular downloads currently")
+# YTS CLASS
+class YTS:
+    """ provides an API for downloading yts yifi movies. """
 
-def make_request(link):
-    res = requests.get(link)
-    if res.status_code == requests.codes.ok:
-        return res
-    else:
-        print("ERROR: ", res.status_code)
-        exit(1)
+    # Initialize with the current yts url
+    def __init__(self, yts_url) -> None:
+        self.url = yts_url
 
-def handle_args():
-    arg_dict = {"name": None, "format": None, "query": None}
-    if len(sys.argv) == 1:
-        return None
-    elif len(sys.argv) == 2:
-        if sys.argv[1] == "-h" or sys.argv[1] == "--help":
-            print_usage()
-            exit(0)
+    # Handles CLI arguments
+    # Returns a dictionary of the arguments with an error string
+    # Only one flag is to be applied at a time
+    def get_cli_args(self) -> dict:
+        parser = argparse.ArgumentParser(prog="yts",
+                                         description="Downloads YTS movie torrents.",
+                                         allow_abbrev=False)
+
+        # Add available movie formats argument
+        parser.add_argument("-f",
+                            nargs=2,
+                            metavar=("MOVIE", "YEAR"),
+                            action="store",
+                            help="shows the available movie formats")
+
+        # Add download movie torrent argument
+        parser.add_argument("-d",
+                            nargs=3,
+                            metavar=("MOVIE", "YEAR", "FORMAT"),
+                            action="store",
+                            help="downloads movie torrent in the given format")
+
+        # Add search movie argument
+        parser.add_argument("-s",
+                            nargs=1,
+                            metavar="MOVIE",
+                            action="store",
+                            help="search movies in yts")
+
+        # Add popular movies argument
+        parser.add_argument("-p",
+                            action="store_true",
+                            help="shows popular downloads")
+        
+        # create argument dictionary
+        arguments_dict = vars(parser.parse_args())
+        flags_applied = self.number_of_flags(arguments_dict)
+        
+        # create an error string according to number of flags
+        if flags_applied == 0:
+            error_string = "Check Usage using -h"
+        elif flags_applied > 1:
+            error_string = "Only One Flag is applicable"
         else:
-            print_usage()
-            exit(1)
-    elif len(sys.argv) == 3:
-        if sys.argv[1] == "-s" or sys.argv[1] == "--search":
-            arg_dict["query"] = search_movies(sys.argv[2])
-        else:
-            arg_dict["name"] = get_movie_name()
-    elif len(sys.argv) == 4:
-        arg_dict["name"] = get_movie_name()
-        arg_dict["format"] = get_movie_format()
-    else:
-        print_usage()
-        exit(1)   
-    return arg_dict
+            error_string = ""
 
-def get_movie_name():
-    return "-".join(sys.argv[1].split()).lower()+"-"+sys.argv[2]
+        # Add error string to arguments dictionary
+        arguments_dict["error"] = error_string
 
-def get_movie_format():
-    return sys.argv[3]
+        return arguments_dict
 
-def check_format_availability(format, formats):
-    return format in formats
-
-def get_movie_page(movie):
-    link = "https://yts.lt/movie/"+movie
-    res = make_request(link)
-    return res
-
-def get_pop_downs():
-    link = "https://yts.lt"
-    res = make_request(link)
-    query_dict = {}
-    pop_movies = bs4.BeautifulSoup(res.text, "lxml").select("#popular-downloads")[0].select("div[class='browse-movie-wrap col-xs-10 col-sm-5']")
-    for movie in pop_movies:
-        movie_data = movie.select("a > figure")[0]
-        query_dict.update(extract_movie_data(movie_data))
-    return query_dict
-
-
-def extract_movie_data(movie_data):
-    movie_title = movie_data.select("img")[0]["alt"].replace("download", "")
-    rating = movie_data.select("figcaption > h4[class='rating']")[0].getText()
-    return {movie_title: rating}
-
-
-def search_movies(query):
-    link = "https://yts.lt/browse-movies/{}/all/all/0/latest".format(query)
-    res = make_request(link)
-    query_dict = {}
-    movies_found = bs4.BeautifulSoup(res.text, "lxml").select("section > div[class='row']")[0].select("div[class='browse-movie-wrap col-xs-10 col-sm-4 col-md-5 col-lg-4']")
-    for movie in movies_found:
-        movie_data = movie.select("a > figure")[0]
-        query_dict.update(extract_movie_data(movie_data))
-    return query_dict
-
-def extract_formats(movie_page):
-    movie_formats = bs4.BeautifulSoup(movie_page.text, "lxml").select("p[class='hidden-xs hidden-sm']")[0].find_all("a")
-    links = {}
-    for movie_format in movie_formats:
-        links[movie_format.getText()] = movie_format["href"]
-    return links
-
-def print_formats(formats):
-    print("Available In:")
-    for key in formats.keys():
-        print("\t", key)
- 
-
-def get_torrent(movie_name, torrent_link):
-    res = make_request(torrent_link)
-    torrent_name = movie_name+".torrent"
-    if os.path.isfile(torrent_name):
-        print("Torrent file exists")
-    else:
-        open(torrent_name, "wb").write(res.content)
+    ### UTIL FUNCTIONS ###
     
-    return torrent_name 
+    # Make sure only one flag is used at a time
+    # Return an int of number of flags
+    def number_of_flags(self, arguments_dict) -> int:
+        # Convert arguments to 0 if not present or False
+        # and to 1 if present or True
+        arguments_dict_int = []
+        for value in arguments_dict.values():
+            if value in (False, None):
+                arguments_dict_int.append(0)
+            else:
+                arguments_dict_int.append(1)
 
-def execute_transmission(torrent_name):
-    command = "transmission-gtk {}".format(torrent_name)
-    command_list = command.split()
-    subprocess.Popen(command_list)
+        return sum(arguments_dict_int)
+
+def main():
+    yts = YTS("https://yts.mx")
+    print(yts.get_cli_args())
 
 if __name__ == "__main__":
-    arg_dict = handle_args()
-    if arg_dict == None:
-        pop_movies = get_pop_downs()
-        if pop_movies:
-            print("Popular Downloads:")
-            for movie, rating in pop_movies.items():
-                print("\t{}{}".format(movie, rating))
-        exit(0)
-    movie_name = arg_dict["name"]
-    movie_format = arg_dict["format"]
-    search_query_res = arg_dict["query"]
-    if search_query_res:
-        print("Movies Found:")
-        for movie, rating in search_query_res.items():
-            print("\t{}{}".format(movie, rating))
-    else:
-        
-        if not movie_name:
-            exit(1)
-    
-        movie_page = get_movie_page(movie_name)
-        if not movie_page:
-            print("Movie Page does not exist!")    
-            exit(1)
-
-        formats = extract_formats(movie_page)
-        if not formats:
-            print("Cannot get movie formats")
-            exit(1)
-    
-        if movie_format:
-            if check_format_availability(movie_format, formats):
-                torrent_link = formats[movie_format]
-                torrent_name = get_torrent(movie_name, torrent_link)
-                if not torrent_name:
-                    print("Cannot download torrent")
-                else:
-                    execute_transmission(torrent_name)
-
-            else:
-                print("{} format not available for {}".format(movie_format, movie_name))
-        else:
-            print_formats(formats)
+    main()
