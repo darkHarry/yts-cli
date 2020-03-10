@@ -124,6 +124,19 @@ class YTS:
         )
         return {movie_title: rating}
 
+    # Execute Transmission-gtk with the downloaded torrent
+    def execute_transmission(self, torrent_name):
+        command = f"transmission-gtk {torrent_name}"
+        command_list = command.split()
+        subprocess.Popen(command_list)
+
+    # Utitility method to print available formats
+    # Param: return of extract_format method
+    def print_formats(self, formats):
+        print("Available In:")
+        for key in formats.keys():
+            print("\t", key)
+
 
 # TODO design a better cli usage
 # Handle CLI arguments Class
@@ -224,6 +237,41 @@ class Arguments:
 def main():
     yts = YTS("https://yts.mx/")
     args = Arguments()
+
+    # Handle arguments
+    if args.arguments["p"]:
+        pop_movies = yts.get_popluar_downloads()
+        if pop_movies:
+            print("Popular Downloads:")
+            for movie, rating in pop_movies.items():
+                print(f"\t{movie} {rating}")
+
+    elif args.arguments["s"]:
+        query = args.get_search_arguments()
+        search_query_res = yts.search_movies(query)
+        print("Movies Found:")
+        for movie, rating in search_query_res.items():
+            print(f"\t{movie} {rating}")
+    elif args.arguments["f"]:
+        name, year = args.get_format_arguments()
+        title = yts.get_movie_title(name, year)
+        page = yts.get_movie_page(title)
+        formats = yts.extract_formats(page)
+        yts.print_formats(formats)
+    elif args.arguments["d"]:
+        name, year, movie_format = args.get_download_arguments()
+        title = yts.get_movie_title(name, year)
+        page = yts.get_movie_page(title)
+        formats = yts.extract_formats(page)
+        if yts.check_format_availability(movie_format, formats):
+            torrent_url = formats[movie_format]
+            torrent_name = yts.get_torrent(title, torrent_url)
+            if not torrent_name:
+                print("Cannot download torrent")
+            else:
+                yts.execute_transmission(torrent_name)
+        else:
+            print(f"{movie_format} format not available for {name}")
 
 if __name__ == "__main__":
     main()
