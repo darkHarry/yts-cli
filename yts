@@ -16,23 +16,17 @@ class YTS:
     def __init__(self, yts_url):
         self.url = yts_url
 
-    # Gets the movie name from the arguments
+    # Gets the movie title from the arguments
     # Returns a string (eg: the-nun-2018)
-    def get_movie_name_for_url(self) -> str:
-        flag_key = "f" if self.arguments["f"] else "d"
-        movie_name = self.arguments[flag_key][0].lower().split()
-        movie_year = self.arguments[flag_key][1]
-        return "-".join(movie_name) + "-" + movie_year
+    def get_movie_title(self, movie_name, movie_year) -> str:
+        name = movie_name.lower().split()
+        year = movie_year # TODO check if valid year
+        return "-".join(name) + "-" + year
 
-    # Gets the movie format from the arguments
-    # Returns a string (eg: 1080p.WEB)
-    def get_movie_format(self) -> str:
-        return self.arguments["d"]
-
-    # Get the movie page
+    # Get the movie page from movie_title
     # Returns a response object
-    def get_movie_page(self, movie_name):
-        url = self.url+"movie/"+movie_name
+    def get_movie_page(self, movie_title):
+        url = self.url+"movie/"+movie_title
         movie_page = self.make_request(url)
         return movie_page
 
@@ -51,9 +45,9 @@ class YTS:
 
     # Download and save movie torrent file to current folder
     # Returns torrent name (eg: the-nun-2018.torrent)
-    def get_torrent(self, movie_name, torrent_url):
+    def get_torrent(self, movie_title, torrent_url):
         res = self.make_request(torrent_url)
-        torrent_name = movie_name+".torrent"
+        torrent_name = movie_title+".torrent"
         if not os.path.isfile(torrent_name):
             with open(torrent_name, "wb") as torrent_file:
                 torrent_file.write(res.content)
@@ -64,7 +58,6 @@ class YTS:
 
     # Gets the popular downloads from the homepage
     # Returns a dictionary with movie title and rating
-    # Use only when -p flag is set
     def get_popluar_downloads(self) -> dict:
         res = self.make_request(self.url)
         pop_movies_dict = {}
@@ -76,11 +69,10 @@ class YTS:
         for movie in pop_movies:
             movie_data = movie.select("a > figure")[0]
             pop_movies_dict.update(self.extract_movie_data(movie_data))
-        return pop_movie_dict
+        return pop_movies_dict
 
     # Gets the search result for the query
     # Returns a dictionary with movie title and rating
-    # Use only when -s flag is set
     def search_movies(self, query):
         url = f"{self.url}browse-movies/{query}/all/all/0/latest"
         res = self.make_request(url)
@@ -123,6 +115,7 @@ class YTS:
             movie_data
             .select("img")[0]["alt"]
             .replace("download", "")
+            .strip()
         )
         rating = (
             movie_data
@@ -130,6 +123,7 @@ class YTS:
             .getText()
         )
         return {movie_title: rating}
+
 
 # TODO design a better cli usage
 # Handle CLI arguments Class
