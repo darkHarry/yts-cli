@@ -31,6 +31,62 @@ class YTS:
     def __init__(self, yts_url):
         self.url = yts_url
 
+    # Get the movie page from movie_title
+    # Returns a response object
+    def get_movie_page(self, movie_title):
+        url = self.url+"movie/"+movie_title
+        movie_page = make_request(url)
+        return movie_page
+
+    # Gets the popular downloads from the homepage
+    # Returns a dictionary with movie title and rating
+    def get_popular_downloads(self) -> dict:
+        res = make_request(self.url)
+        pop_movies_dict = {}
+        pop_movies = (
+            bs4.BeautifulSoup(res.text, "lxml")
+            .select("#popular-downloads")[0]
+            .select("div[class='browse-movie-wrap col-xs-10 col-sm-5']")
+        )
+        for movie in pop_movies:
+            movie_data = movie.select("a > figure")[0]
+            pop_movies_dict.update(self.extract_movie_data(movie_data))
+        return pop_movies_dict
+
+    # Gets the search result for the query
+    # Returns a dictionary with movie title and rating
+    def search_movies(self, query):
+        url = f"{self.url}browse-movies/{query}/all/all/0/latest"
+        res = make_request(url)
+        query_dict = {}
+        movies_found = (
+            bs4.BeautifulSoup(res.text, "lxml")
+            .select("section > div[class='row']")[0]
+            .select("div[class='browse-movie-wrap col-xs-10 col-sm-4 col-md-5 col-lg-4']")
+        )
+        for movie in movies_found:
+            movie_data = movie.select("a > figure")[0]
+            query_dict.update(self.extract_movie_data(movie_data))
+        return query_dict
+
+    def get_movie_data(self, name, year):
+        title = self.get_movie_title(name, year)
+        page = self.get_movie_page(title)
+        formats = self.extract_formats(page)
+        return title, formats
+
+    # Utility method to print available formats
+    # Param: return of extract_format method
+    def print_formats(self, formats=None, name=None, year=None):
+        if formats is None:
+            formats = self.get_movie_data(name, year)[1]
+
+        print("Available In:")
+        for key in formats.keys():
+            print("\t", key)
+
+    ### STATIC FUNCTIONS ###
+
     # Gets the movie title from the arguments
     # Returns a string (eg: the-nun-2018)
     @staticmethod
@@ -38,13 +94,6 @@ class YTS:
         name = movie_name.lower().split()
         year = movie_year # TODO check if valid year
         return "-".join(name) + "-" + year
-
-    # Get the movie page from movie_title
-    # Returns a response object
-    def get_movie_page(self, movie_title):
-        url = self.url+"movie/"+movie_title
-        movie_page = make_request(url)
-        return movie_page
 
     # Get the movie formats from the movie page
     # Returns a dictionary of formats with their torrent urls as values
@@ -74,50 +123,6 @@ class YTS:
             pass
         return torrent_name
 
-    # Gets the popular downloads from the homepage
-    # Returns a dictionary with movie title and rating
-    def get_popular_downloads(self) -> dict:
-        res = make_request(self.url)
-        pop_movies_dict = {}
-        pop_movies = (
-            bs4.BeautifulSoup(res.text, "lxml")
-            .select("#popular-downloads")[0]
-            .select("div[class='browse-movie-wrap col-xs-10 col-sm-5']")
-        )
-        for movie in pop_movies:
-            movie_data = movie.select("a > figure")[0]
-            pop_movies_dict.update(self.extract_movie_data(movie_data))
-        return pop_movies_dict
-
-    # Gets the search result for the query
-    # Returns a dictionary with movie title and rating
-    def search_movies(self, query):
-        url = f"{self.url}browse-movies/{query}/all/all/0/latest"
-        res = self.make_request(url)
-        query_dict = {}
-        movies_found = (
-            bs4.BeautifulSoup(res.text, "lxml")
-            .select("section > div[class='row']")[0]
-            .select("div[class='browse-movie-wrap col-xs-10 col-sm-4 col-md-5 col-lg-4']")
-        )
-        for movie in movies_found:
-            movie_data = movie.select("a > figure")[0]
-            query_dict.update(self.extract_movie_data(movie_data))
-        return query_dict
-    
-    # Check if argument format is present in extracted formats
-    @staticmethod
-    def check_format_availability(format, formats) -> bool:
-        return format in formats
-
-    def get_movie_data(self, name, year):
-        title = self.get_movie_title(name, year)
-        page = self.get_movie_page(title)
-        formats = self.extract_formats(page)
-        return title, formats
-
-    ### UTIL FUNCTIONS ###
-
     # Used by get_popular_downloads and search_movies
     # extracts movie title with its rating
     # Returns a dictionary (eg {'the-nun (2018)': '5.3 / 10'})
@@ -136,22 +141,18 @@ class YTS:
         )
         return {movie_title: rating}
 
+    
+    # Check if argument format is present in extracted formats
+    @staticmethod
+    def check_format_availability(format, formats) -> bool:
+        return format in formats
+
 
     # Execute Transmission-gtk with the downloaded torrent
     @staticmethod
     def execute_transmission(torrent_name):
         subprocess.Popen(["transmission-gtk", torrent_name])
 
-    # Utitility method to print available formats
-    # Param: return of extract_format method
-    @staticmethod
-    def print_formats(formats=None, name=None, year=None):
-        if formats is None:
-            formats = yts.get_movie_data(name, year)[1]
-
-        print("Available In:")
-        for key in formats.keys():
-            print("\t", key)
 
 # TODO design a better cli usage
 # Handle CLI arguments Class
@@ -169,7 +170,7 @@ class Arguments:
                                          description="Downloads YTS movie torrents.",
                                          allow_abbrev=False)
 
-        flags = parser.add_mutually_exclusive_group("Select one option for downloading.", required=True)
+        flags = parser.add_mutually_exclusive_group(required=True)
         # Add available movie formats argument
         flags.add_argument("-f",
                             nargs=2,
