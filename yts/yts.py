@@ -141,12 +141,10 @@ class YTS:
         )
         return {movie_title: rating}
 
-    
     # Check if argument format is present in extracted formats
     @staticmethod
     def check_format_availability(format, formats) -> bool:
         return format in formats
-
 
     # Execute Transmission-gtk with the downloaded torrent
     @staticmethod
