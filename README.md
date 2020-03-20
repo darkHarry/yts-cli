@@ -3,7 +3,7 @@ A Python3 script to download [YTS](https://yts.mx) movies with the help of [tran
 
 
 # Usage
-Usage : `./yts [-h] [-f MOVIE YEAR] [-d MOVIE YEAR FORMAT] [-s MOVIE] [-p]`
+Usage : `./yts [-h] (-f MOVIE YEAR | -d MOVIE YEAR FORMAT | -s MOVIE | -p)`
 
 
 **Note**: Only one flag is to be used at a time.
