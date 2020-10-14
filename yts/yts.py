@@ -56,13 +56,14 @@ class YTS:
     # Gets the search result for the query
     # Returns a dictionary with movie title and rating
     def search_movies(self, query):
-        url = f"{self.url}browse-movies/{query}/all/all/0/latest"
+        url = f"{self.url}browse-movies/{query}"
         res = make_request(url)
         query_dict = {}
         movies_found = (
             bs4.BeautifulSoup(res.text, "lxml")
             .select("section > div[class='row']")[0]
-            .select("div[class='browse-movie-wrap col-xs-10 col-sm-4 col-md-5 col-lg-4']")
+            .select("div[class='browse-movie-wrap col-xs-10 col-sm-4"
+                    " col-md-5 col-lg-4']")
         )
         for movie in movies_found:
             movie_data = movie.select("a > figure")[0]
@@ -85,14 +86,14 @@ class YTS:
         for key in formats.keys():
             print("\t", key)
 
-    ### STATIC FUNCTIONS ###
+    # STATIC FUNCTIONS #
 
     # Gets the movie title from the arguments
     # Returns a string (eg: the-nun-2018)
     @staticmethod
     def get_movie_title(movie_name, movie_year) -> str:
         name = movie_name.lower().split()
-        year = movie_year # TODO check if valid year
+        year = movie_year  # TODO check if valid year
         return "-".join(name) + "-" + year
 
     # Get the movie formats from the movie page
@@ -165,35 +166,36 @@ class Arguments:
     @staticmethod
     def get_cli_args() -> dict:
         parser = argparse.ArgumentParser(prog="yts",
-                                         description="Downloads YTS movie torrents.",
+                                         description=("Downloads YTS"
+                                                      "movie torrents."),
                                          allow_abbrev=False)
 
         flags = parser.add_mutually_exclusive_group(required=True)
         # Add available movie formats argument
         flags.add_argument("-f",
-                            nargs=2,
-                            metavar=("MOVIE", "YEAR"),
-                            action="store",
-                            help="shows the available movie formats")
+                           nargs=2,
+                           metavar=("MOVIE", "YEAR"),
+                           action="store",
+                           help="shows the available movie formats")
 
         # Add download movie torrent argument
         flags.add_argument("-d",
-                            nargs=3,
-                            metavar=("MOVIE", "YEAR", "FORMAT"),
-                            action="store",
-                            help="downloads movie torrent in the given format")
+                           nargs=3,
+                           metavar=("MOVIE", "YEAR", "FORMAT"),
+                           action="store",
+                           help="downloads movie torrent in the given format")
 
         # Add search movie argument
         flags.add_argument("-s",
-                            nargs=1,
-                            metavar="MOVIE",
-                            action="store",
-                            help="search movies in yts")
+                           nargs=1,
+                           metavar="MOVIE",
+                           action="store",
+                           help="search movies in yts")
 
         # Add popular movies argument
         flags.add_argument("-p",
-                            action="store_true",
-                            help="shows popular downloads")
+                           action="store_true",
+                           help="shows popular downloads")
 
         # create argument dictionary
         arguments_dict = vars(parser.parse_args())
@@ -237,6 +239,7 @@ def main():
                 yts.execute_transmission(torrent_name)
         else:
             print(f"{movie_format} format not available for {name}")
+
 
 if __name__ == "__main__":
     main()

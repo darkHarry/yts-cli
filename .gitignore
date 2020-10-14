@@ -1,2 +1,7 @@
-venv
+yts-env
 *.pyc
+build
+dist
+yts.egg-info
+.vscode
+
