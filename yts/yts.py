@@ -9,20 +9,6 @@ import os
 import subprocess
 
 
-# Make request to the given url
-# Returns the response object
-# TODO give a user-friendly error
-def make_request(url):
-    try:
-        res = requests.get(url)
-        res.raise_for_status()
-    except requests.exceptions.RequestException as err:
-        print(err)
-        sys.exit()
-
-    return res
-
-
 # YTS CLASS
 class YTS:
     """ provides an API for downloading yts yifi movies. """
@@ -71,6 +57,11 @@ class YTS:
         formats = self.extract_formats(movie_page)
         return formats
 
+    # Download and return movie torrent file raw
+    def get_torrent(self, torrent_url):
+        res = make_request(torrent_url)
+        return res
+
     # STATIC FUNCTIONS #
 
     # Get the movie formats from the movie page
@@ -86,20 +77,6 @@ class YTS:
         for movie_format in movie_formats:
             torrent_urls[movie_format.getText()] = movie_format["href"]
         return torrent_urls
-
-    # Download and save movie torrent file to current folder
-    # Returns torrent name (eg: the-nun-2018.torrent)
-    @staticmethod
-    def get_torrent(movie_title, torrent_url):
-        res = make_request(torrent_url)
-        torrent_name = movie_title + ".torrent"
-        if not os.path.isfile(torrent_name):
-            with open(torrent_name, "wb") as torrent_file:
-                torrent_file.write(res.content)
-        else:
-            # TODO Tell user file already exists
-            pass
-        return torrent_name
 
     # Used by get_popular_downloads and search_movies
     # extracts movie title with its rating
@@ -172,6 +149,20 @@ class Arguments:
         return self.arguments[arg]
 
 
+# Make request to the given url
+# Returns the response object
+# TODO give a user-friendly error
+def make_request(url):
+    try:
+        res = requests.get(url)
+        res.raise_for_status()
+    except requests.exceptions.RequestException as err:
+        print(err)
+        sys.exit()
+
+    return res
+
+
 def main():
     yts = YTS("https://yts.mx/")
     args = Arguments.get_cli_args()
@@ -202,11 +193,14 @@ def main():
         formats = yts.get_movie_formats(movie_title)
         if movie_format in formats:
             torrent_url = formats[movie_format]
-            torrent_name = yts.get_torrent(movie_title, torrent_url)
-            if not torrent_name:
-                print("Cannot download torrent")
+            torrent = yts.get_torrent(torrent_url)
+            torrent_name = movie_title + ".torrent"
+            if not os.path.isfile(torrent_name):
+                with open(torrent_name, "wb") as torrent_file:
+                    torrent_file.write(torrent.content)
             else:
-                yts.execute_transmission(torrent_name)
+                print(f"{torrent_name} exists")
+            YTS.execute_transmission(torrent_name)
         else:
             print(f"{movie_format} format not available for {movie_title}")
 
