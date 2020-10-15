@@ -198,17 +198,17 @@ def main():
             print("\t", key)
 
     elif args["d"]:
-        name, year, movie_format = args["d"]
-        title, formats = yts.get_movie_data(name, year)
+        movie_title, movie_format = args["d"]
+        formats = yts.get_movie_formats(movie_title)
         if movie_format in formats:
             torrent_url = formats[movie_format]
-            torrent_name = yts.get_torrent(title, torrent_url)
+            torrent_name = yts.get_torrent(movie_title, torrent_url)
             if not torrent_name:
                 print("Cannot download torrent")
             else:
                 yts.execute_transmission(torrent_name)
         else:
-            print(f"{movie_format} format not available for {name}")
+            print(f"{movie_format} format not available for {movie_title}")
 
 
 if __name__ == "__main__":
