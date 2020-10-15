@@ -31,13 +31,6 @@ class YTS:
     def __init__(self, yts_url):
         self.url = yts_url
 
-    # Get the movie page from movie_title
-    # Returns a response object
-    def get_movie_page(self, movie_title):
-        url = self.url+"movie/"+movie_title
-        movie_page = make_request(url)
-        return movie_page
-
     # Gets the popular downloads from the homepage
     # Returns a dictionary with movie title and rating
     def get_popular_downloads(self) -> dict:
@@ -70,31 +63,15 @@ class YTS:
             query_dict.update(self.extract_movie_data(movie_data))
         return query_dict
 
-    def get_movie_data(self, name, year):
-        title = self.get_movie_title(name, year)
-        page = self.get_movie_page(title)
-        formats = self.extract_formats(page)
-        return title, formats
-
-    # Utility method to print available formats
-    # Param: return of extract_format method
-    def print_formats(self, formats=None, name=None, year=None):
-        if formats is None:
-            formats = self.get_movie_data(name, year)[1]
-
-        print("Available In:")
-        for key in formats.keys():
-            print("\t", key)
+    # Gets the movie available formats
+    # Returns a dictionary with formats and torrent-url
+    def get_movie_formats(self, movie_title):
+        movie_page_url = self.url+"movies/"+movie_title
+        movie_page = make_request(movie_page_url)
+        formats = self.extract_formats(movie_page)
+        return formats
 
     # STATIC FUNCTIONS #
-
-    # Gets the movie title from the arguments
-    # Returns a string (eg: the-nun-2018)
-    @staticmethod
-    def get_movie_title(movie_name, movie_year) -> str:
-        name = movie_name.lower().split()
-        year = movie_year  # TODO check if valid year
-        return "-".join(name) + "-" + year
 
     # Get the movie formats from the movie page
     # Returns a dictionary of formats with their torrent urls as values
@@ -137,11 +114,6 @@ class YTS:
         )
         return {movie_title: rating}
 
-    # Check if argument format is present in extracted formats
-    @staticmethod
-    def check_format_availability(format, formats) -> bool:
-        return format in formats
-
     # Execute Transmission-gtk with the downloaded torrent
     @staticmethod
     def execute_transmission(torrent_name):
@@ -168,22 +140,22 @@ class Arguments:
         flags = parser.add_mutually_exclusive_group(required=True)
         # Add available movie formats argument
         flags.add_argument("-f",
-                           nargs=2,
-                           metavar=("MOVIE", "YEAR"),
+                           nargs=1,
+                           metavar=("MOVIE-TITLE"),
                            action="store",
                            help="shows the available movie formats")
 
         # Add download movie torrent argument
         flags.add_argument("-d",
-                           nargs=3,
-                           metavar=("MOVIE", "YEAR", "FORMAT"),
+                           nargs=2,
+                           metavar=("MOVIE-TITLE", "FORMAT"),
                            action="store",
                            help="downloads movie torrent in the given format")
 
         # Add search movie argument
         flags.add_argument("-s",
                            nargs=1,
-                           metavar="MOVIE",
+                           metavar="MOVIE-NAME",
                            action="store",
                            help="search movies in yts")
 
@@ -219,8 +191,11 @@ def main():
             print(f"\t{movie} ({rating})")
 
     elif args["f"]:
-        name, year = args["f"]
-        yts.print_formats(name=name, year=year)
+        movie_title = args["f"][0]
+        formats = yts.get_movie_formats(movie_title)
+        print("Available In:")
+        for key in formats.keys():
+            print("\t", key)
 
     elif args["d"]:
         name, year, movie_format = args["d"]
