@@ -49,7 +49,7 @@ class YTS:
             .select("div[class='browse-movie-wrap col-xs-10 col-sm-5']")
         )
         for movie in pop_movies:
-            movie_data = movie.select("a > figure")[0]
+            movie_data = movie.select("a")[0]
             pop_movies_dict.update(self.extract_movie_data(movie_data))
         return pop_movies_dict
 
@@ -66,7 +66,7 @@ class YTS:
                     " col-md-5 col-lg-4']")
         )
         for movie in movies_found:
-            movie_data = movie.select("a > figure")[0]
+            movie_data = movie.select("a")[0]
             query_dict.update(self.extract_movie_data(movie_data))
         return query_dict
 
@@ -126,15 +126,10 @@ class YTS:
 
     # Used by get_popular_downloads and search_movies
     # extracts movie title with its rating
-    # Returns a dictionary (eg {'the-nun (2018)': '5.3 / 10'})
+    # Returns a dictionary (eg {'the-nun-2018': '5.3 / 10'})
     @staticmethod
     def extract_movie_data(movie_data) -> dict:
-        movie_title = (
-            movie_data
-            .select("img")[0]["alt"]
-            .replace("download", "")
-            .strip()
-        )
+        movie_title = movie_data["href"].split("/")[-1]
         rating = (
             movie_data
             .select("figcaption > h4[class='rating']")[0]
@@ -215,13 +210,13 @@ def main():
         if pop_movies:
             print("Popular Downloads:")
             for movie, rating in pop_movies.items():
-                print(f"\t{movie} {rating}")
+                print(f"\t{movie} ({rating})")
 
     elif args["s"]:
         results = yts.search_movies(args["s"])
         print("Movies Found:")
         for movie, rating in results.items():
-            print(f"\t{movie} {rating}")
+            print(f"\t{movie} ({rating})")
 
     elif args["f"]:
         name, year = args["f"]
