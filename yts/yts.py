@@ -15,12 +15,12 @@ class YTS:
 
     def __init__(self, yts_url):
         """
-        Initialize with the current yts url 
+        Initialize with the current yts url
 
         Parameters
         ----------
-            yts_url: str, required
-                The URL of the yts website
+        yts_url: str, required
+            The URL of the yts website
         """
 
         self.url = yts_url
@@ -28,13 +28,13 @@ class YTS:
     def get_popular_downloads(self) -> dict:
         """
         Gets the popular downloads from the homepage
-        Returns a dictionary with movie title and rating 
+        Returns a dictionary with movie title and rating
 
         Returns
         -------
-            pop_movies_dict: dictionary, { title: str, rating: str }
-                Dictionary with movie title and rating
-                (eg {'totally-under-control-2020': '7.1 / 10'} )
+        pop_movies_dict: dictionary, { title(str): rating(str) }
+            Dictionary with movie title and rating
+            (eg {'totally-under-control-2020': '7.1 / 10'} )
         """
         res = make_request(self.url)
         pop_movies_dict = {}
@@ -51,18 +51,18 @@ class YTS:
     def search_movies(self, query):
         """
         Gets the search result for the query
-        Returns a dictionary with movie title and rating 
+        Returns a dictionary with movie title and rating
 
         Parameters
         ----------
-            query: str, required
-                A name of a movie to search
-        
+        query: str, required
+            A name of a movie to search
+
         Returns
         -------
-            query_dict: dictionary, { title(str): rating(str) }
-                Dictionary with movie title and rating
-                (eg {'totally-under-control-2020': '7.1 / 10'} )
+        query_dict: dictionary, { title(str): rating(str) }
+            Dictionary with movie title and rating
+            (eg {'totally-under-control-2020': '7.1 / 10'} )
         """
         url = f"{self.url}browse-movies/{query}"
         res = make_request(url)
@@ -81,18 +81,18 @@ class YTS:
     def get_movie_formats(self, movie_title):
         """
         Gets the movie available formats
-        Returns a dictionary with formats and torrent-url 
+        Returns a dictionary with formats and torrent-url
 
         Parameters
         ----------
-            movie_title: str, required
-                A title string of a movie to get details
-        
+        movie_title: str, required
+            A title string of a movie to get details
+
         Returns
         -------
-            query_dict: dictionary, { format(str): torrent-url(str) }
-                Dictionary with formats and torrent-url 
-                (eg {'720p.WEB': 'https://yts.mx/torrent/download/FD3FBEFA241C2E04A24DF5415B1F5031AEE9F888'})
+        formats: dictionary, { format(str): torrent_url(str) }
+            Dictionary with formats and torrent-url
+            (eg {'720p.WEB': 'https://yts.mx/torrent/download/...'})
         """
         movie_page_url = self.url+"movies/"+movie_title
         movie_page = make_request(movie_page_url)
@@ -101,17 +101,17 @@ class YTS:
 
     def get_torrent(self, torrent_url):
         """
-        Download and return movie torrent file raw 
+        Download and return movie torrent file raw
 
         Parameters
         ----------
-            torrent_url: str, required
-                URL of the torrent file
-        
+        torrent_url: str, required
+            URL of the torrent file
+
         Returns
         -------
-            res: raw, file
-                The downloaded torrent file 
+        res: raw, file
+            The downloaded torrent file
         """
         res = make_request(torrent_url)
         return res
@@ -120,20 +120,20 @@ class YTS:
 
     @staticmethod
     def extract_formats(movie_page) -> dict:
-        """ 
+        """
         Get the movie formats from the movie page
         Returns a dictionary of formats with their torrent urls as values
 
         Parameters
         ----------
-            movie_page: Response, required
-                Response object of the http request to the movie page
-        
+        movie_page: Response, required
+            Response object of the http request to the movie page
+
         Returns
         -------
-            torrent_urls: dictionary, {format(str): torrent url(str)}
-                Dictionary of formats with their torrent urls as values
-                (eg {'720p.WEB': 'https://yts.mx/torrent/download/FD3FBEFA241C2E04A24DF5415B1F5031AEE9F888'})
+        torrent_urls: dictionary, { format(str): torrent_url(str) }
+            Dictionary of formats with their torrent urls as values
+            (eg {'720p.WEB': 'https://yts.mx/torrent/download/...'})
         """
         movie_formats = (
             bs4.BeautifulSoup(movie_page.text, "lxml")
@@ -147,20 +147,20 @@ class YTS:
 
     @staticmethod
     def extract_movie_data(movie_data) -> dict:
-        """ 
+        """
         Used by get_popular_downloads and search_movies
         extracts movie title with its rating
-        Returns a dictionary (eg {'the-nun-2018': '5.3 / 10'}) 
+        Returns a dictionary (eg {'the-nun-2018': '5.3 / 10'})
 
         Parameters
         ----------
-            movie_data: bs4.element.Tag, required
-                Page content of the movie from the website
-        
+        movie_data: bs4.element.Tag, required
+            Page content of the movie from the website
+
         Returns
         -------
-            dict: dictionary, {movie_title(str): rating(str)}
-                Returns a dictionary (eg {'the-nun-2018': '5.3 / 10'}) 
+        dict: dictionary, {movie_title(str): rating(str)}
+            Returns a dictionary (eg {'the-nun-2018': '5.3 / 10'})
         """
         movie_title = movie_data["href"].split("/")[-1]
         rating = (
@@ -172,12 +172,12 @@ class YTS:
 
     @staticmethod
     def execute_transmission(torrent_name):
-        """ Execute Transmission-gtk with the downloaded torrent 
+        """ Execute Transmission-gtk with the downloaded torrent
 
         Parameters
         ----------
-            torrent_name: str, required
-                Name of the torrent to be downloaded
+        torrent_name: str, required
+            Name of the torrent to be downloaded
         """
         subprocess.Popen(["transmission-gtk", torrent_name])
 
@@ -185,6 +185,7 @@ class YTS:
 # TODO design a better cli usage
 class Arguments:
     """ Handle CLI arguments Class """
+
     def __init__(self):
         """ Initialize arguments """
         self.arguments = self.get_cli_args()
@@ -193,12 +194,12 @@ class Arguments:
     def get_cli_args() -> dict:
         """ Handles CLI arguments
         Returns a dictionary of the arguments
-        Only one flag is to be applied at a time 
+        Only one flag is to be applied at a time
 
         Returns
         -------
-            arguments_dict: dictionary
-                Dictionary of the cli arguments
+        arguments_dict: dictionary
+            Dictionary of the cli arguments
         """
         parser = argparse.ArgumentParser(prog="yts",
                                          description=("Downloads YTS"
@@ -243,7 +244,18 @@ class Arguments:
 # TODO give a user-friendly error
 def make_request(url):
     """ Make request to the given url
-    Returns the response object """
+    Returns the response object
+
+    Parameters
+    ----------
+    url: str, required
+        target URL
+
+    Returns
+    -------
+    res: response
+        Returns a HTTP Response object
+    """
     try:
         res = requests.get(url)
         res.raise_for_status()
@@ -298,4 +310,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    
