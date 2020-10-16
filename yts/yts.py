@@ -13,13 +13,29 @@ import subprocess
 class YTS:
     """ provides an API for downloading yts yifi movies. """
 
-    # Initialize with the current yts url
     def __init__(self, yts_url):
+        """
+        Initialize with the current yts url 
+
+        Parameters
+        ----------
+            yts_url: str, required
+                The URL of the yts website
+        """
+
         self.url = yts_url
 
-    # Gets the popular downloads from the homepage
-    # Returns a dictionary with movie title and rating
     def get_popular_downloads(self) -> dict:
+        """
+        Gets the popular downloads from the homepage
+        Returns a dictionary with movie title and rating 
+
+        Returns
+        -------
+            pop_movies_dict: dictionary, { title: str, rating: str }
+                Dictionary with movie title and rating
+                (eg {'totally-under-control-2020': '7.1 / 10'} )
+        """
         res = make_request(self.url)
         pop_movies_dict = {}
         pop_movies = (
@@ -32,9 +48,22 @@ class YTS:
             pop_movies_dict.update(self.extract_movie_data(movie_data))
         return pop_movies_dict
 
-    # Gets the search result for the query
-    # Returns a dictionary with movie title and rating
     def search_movies(self, query):
+        """
+        Gets the search result for the query
+        Returns a dictionary with movie title and rating 
+
+        Parameters
+        ----------
+            query: str, required
+                A name of a movie to search
+        
+        Returns
+        -------
+            query_dict: dictionary, { title(str): rating(str) }
+                Dictionary with movie title and rating
+                (eg {'totally-under-control-2020': '7.1 / 10'} )
+        """
         url = f"{self.url}browse-movies/{query}"
         res = make_request(url)
         query_dict = {}
@@ -49,25 +78,63 @@ class YTS:
             query_dict.update(self.extract_movie_data(movie_data))
         return query_dict
 
-    # Gets the movie available formats
-    # Returns a dictionary with formats and torrent-url
     def get_movie_formats(self, movie_title):
+        """
+        Gets the movie available formats
+        Returns a dictionary with formats and torrent-url 
+
+        Parameters
+        ----------
+            movie_title: str, required
+                A title string of a movie to get details
+        
+        Returns
+        -------
+            query_dict: dictionary, { format(str): torrent-url(str) }
+                Dictionary with formats and torrent-url 
+                (eg {'720p.WEB': 'https://yts.mx/torrent/download/FD3FBEFA241C2E04A24DF5415B1F5031AEE9F888'})
+        """
         movie_page_url = self.url+"movies/"+movie_title
         movie_page = make_request(movie_page_url)
         formats = self.extract_formats(movie_page)
         return formats
 
-    # Download and return movie torrent file raw
     def get_torrent(self, torrent_url):
+        """
+        Download and return movie torrent file raw 
+
+        Parameters
+        ----------
+            torrent_url: str, required
+                URL of the torrent file
+        
+        Returns
+        -------
+            res: raw, file
+                The downloaded torrent file 
+        """
         res = make_request(torrent_url)
         return res
 
     # STATIC FUNCTIONS #
 
-    # Get the movie formats from the movie page
-    # Returns a dictionary of formats with their torrent urls as values
     @staticmethod
     def extract_formats(movie_page) -> dict:
+        """ 
+        Get the movie formats from the movie page
+        Returns a dictionary of formats with their torrent urls as values
+
+        Parameters
+        ----------
+            movie_page: Response, required
+                Response object of the http request to the movie page
+        
+        Returns
+        -------
+            torrent_urls: dictionary, {format(str): torrent url(str)}
+                Dictionary of formats with their torrent urls as values
+                (eg {'720p.WEB': 'https://yts.mx/torrent/download/FD3FBEFA241C2E04A24DF5415B1F5031AEE9F888'})
+        """
         movie_formats = (
             bs4.BeautifulSoup(movie_page.text, "lxml")
             .select("p[class='hidden-xs hidden-sm']")[0]
@@ -78,11 +145,23 @@ class YTS:
             torrent_urls[movie_format.getText()] = movie_format["href"]
         return torrent_urls
 
-    # Used by get_popular_downloads and search_movies
-    # extracts movie title with its rating
-    # Returns a dictionary (eg {'the-nun-2018': '5.3 / 10'})
     @staticmethod
     def extract_movie_data(movie_data) -> dict:
+        """ 
+        Used by get_popular_downloads and search_movies
+        extracts movie title with its rating
+        Returns a dictionary (eg {'the-nun-2018': '5.3 / 10'}) 
+
+        Parameters
+        ----------
+            movie_data: bs4.element.Tag, required
+                Page content of the movie from the website
+        
+        Returns
+        -------
+            dict: dictionary, {movie_title(str): rating(str)}
+                Returns a dictionary (eg {'the-nun-2018': '5.3 / 10'}) 
+        """
         movie_title = movie_data["href"].split("/")[-1]
         rating = (
             movie_data
@@ -91,24 +170,36 @@ class YTS:
         )
         return {movie_title: rating}
 
-    # Execute Transmission-gtk with the downloaded torrent
     @staticmethod
     def execute_transmission(torrent_name):
+        """ Execute Transmission-gtk with the downloaded torrent 
+
+        Parameters
+        ----------
+            torrent_name: str, required
+                Name of the torrent to be downloaded
+        """
         subprocess.Popen(["transmission-gtk", torrent_name])
 
 
 # TODO design a better cli usage
-# Handle CLI arguments Class
 class Arguments:
-    # Initialize arguments
+    """ Handle CLI arguments Class """
     def __init__(self):
+        """ Initialize arguments """
         self.arguments = self.get_cli_args()
 
-    # Handles CLI arguments
-    # Returns a dictionary of the arguments
-    # Only one flag is to be applied at a time
     @staticmethod
     def get_cli_args() -> dict:
+        """ Handles CLI arguments
+        Returns a dictionary of the arguments
+        Only one flag is to be applied at a time 
+
+        Returns
+        -------
+            arguments_dict: dictionary
+                Dictionary of the cli arguments
+        """
         parser = argparse.ArgumentParser(prog="yts",
                                          description=("Downloads YTS"
                                                       "movie torrents."),
@@ -149,10 +240,10 @@ class Arguments:
         return self.arguments[arg]
 
 
-# Make request to the given url
-# Returns the response object
 # TODO give a user-friendly error
 def make_request(url):
+    """ Make request to the given url
+    Returns the response object """
     try:
         res = requests.get(url)
         res.raise_for_status()
@@ -207,3 +298,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    
