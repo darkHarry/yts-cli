@@ -25,7 +25,7 @@ setuptools.setup(
         'certifi==2019.11.28',
         'chardet==3.0.4',
         'idna==2.9',
-        'lxml==4.6.2',
+        'lxml==4.6.3',
         'requests==2.23.0',
         'soupsieve==2.0',
         'urllib3==1.25.8',
