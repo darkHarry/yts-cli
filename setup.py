@@ -28,7 +28,7 @@ setuptools.setup(
         'lxml==4.6.2',
         'requests==2.23.0',
         'soupsieve==2.0',
-        'urllib3==1.25.8',
+        'urllib3==1.26.5',
     ],
     python_requires='>=3.6',
     entry_points={
